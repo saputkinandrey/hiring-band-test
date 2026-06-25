@@ -3,24 +3,8 @@
 ## General
 - Prefer concise changes; keep public APIs minimal.
 - Default to ASCII in new content.
-- Write implementation plans and `CreatePlan` artifacts in Russian unless the user explicitly asks for another language.
 - Always run Prettier after backend changes (use the project's formatter even for small edits).
 - Nested `AGENTS.md` apply to their subtree and override this file on conflicts.
-- Treat commands starting with `docker compose` as pre-approved local workflow for this project; do not stop to ask for permission before running them.
-- For repeated local tooling, prefer stable wrapper commands such as fixed `npm run ...` aliases over long ad-hoc shell commands.
-- When shell tooling needs dynamic input, prefer reading it from repo-local files rather than embedding long changing arguments directly in the command line.
-
-## Agent Tooling Workflow
-- Prefer stable repo-local wrappers for repeated local operations so command prefixes stay short and reusable.
-- Prefer commands such as `npm run mongo:query`, `npm run docker:logs:api`, `npm run docker:logs:mongo`, and `npm run docker:up` over long inline `docker compose ...` or `mongosh --eval ...` commands.
-- When a local query or script needs changing input, put that input into repo-local files instead of passing it as changing shell arguments.
-- For Mongo inspection in `backend`, keep the query body in `backend/tmp/mongo-query.js` and optional database name in `backend/tmp/mongo-query.database.txt`, then run the stable wrapper `npm run mongo:query`.
-- Prefer adding a new fixed wrapper command over repeatedly inventing new long shell commands for the same local workflow.
-
-## Project Sources
-- Treat `project-sources/roleplaying-systems.xlsx` as an important project data source. It contains multiple roleplaying systems planned for future implementation in this project.
-- Treat `project-sources/culinary-system-world-of-hex.docx` as an important project data source for the culinary system in the World of Hex setting.
-- When a task touches mechanics covered by these files, inspect the relevant source before assessing or implementing behavior.
 
 ## SOW Feature Assessment
 - Use strict status mapping: `done`, `partial`, `not done`.
@@ -86,9 +70,3 @@
 - By default, backward compatibility is not required for data models, stored data formats, and migration paths unless explicitly requested.
 - Prefer strict, explicit contracts over compatibility fallbacks unless compatibility support is explicitly requested.
 - While the project is still in development, do not hide real command or service results behind reduced success-only acknowledgements such as `{ ok: true }` unless the user explicitly requests that contract.
-
-## Cleanup
-- Do not delete legacy files unless explicitly requested.
-- Legacy files are kept for reference; avoid editing them unless asked.
-- Legacy files live under `__*` folders or use `__*` prefixes.
-- Keep domain entities free from infrastructure concerns (streams/guards live in base classes).
