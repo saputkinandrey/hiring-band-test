@@ -134,9 +134,95 @@ Response `200`:
 
 Missing or invalid session cookie returns `401` with `errorCode: "UNAUTHORIZED"`.
 
-## Planned Endpoints
+### Callbacks
 
-The following endpoints will be documented here as they are implemented:
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/webhooks/psp/:provider` | Receive a PSP provider callback |
+| POST | `/webhooks/gsp/:provider` | Receive a GSP provider callback |
 
-- `POST /webhooks/psp/:provider`
-- `POST /webhooks/gsp/:provider`
+Callback requests do **not** use `Idempotency-Key` or tenant headers. Tenant and idempotency data come from the JSON body:
+
+| Field | Description |
+|-------|-------------|
+| `brandId` | Tenant key; must match an active seeded tenant (`brandA`, `brandB`) |
+| `idempotencyKey` | Deduplication key supplied by the provider integration |
+| `payload` | Original provider message as a JSON object |
+
+#### PSP callback (accepted)
+
+```bash
+curl -X POST http://localhost:3000/webhooks/psp/stripe \
+  -H "Content-Type: application/json" \
+  -H "X-Correlation-Id: psp-callback-1" \
+  -d '{
+    "brandId": "brandA",
+    "idempotencyKey": "psp-payment-evt-001",
+    "payload": {
+      "amount": 1000,
+      "currency": "USD",
+      "status": "completed"
+    }
+  }'
+```
+
+Response `200`:
+
+```json
+{
+  "status": "accepted",
+  "rawEventId": "clx...",
+  "brandId": "brandA",
+  "source": "psp",
+  "provider": "stripe",
+  "idempotencyKey": "psp-payment-evt-001"
+}
+```
+
+#### PSP callback (duplicate)
+
+Sending the same `brandId`, provider path, and `idempotencyKey` again returns `200` (not `409`):
+
+```json
+{
+  "status": "duplicate",
+  "brandId": "brandA",
+  "source": "psp",
+  "provider": "stripe",
+  "idempotencyKey": "psp-payment-evt-001"
+}
+```
+
+No second `raw_events` row is created for the duplicate.
+
+#### GSP callback
+
+```bash
+curl -X POST http://localhost:3000/webhooks/gsp/checkout \
+  -H "Content-Type: application/json" \
+  -H "X-Correlation-Id: gsp-callback-1" \
+  -d '{
+    "brandId": "brandB",
+    "idempotencyKey": "gsp-round-evt-001",
+    "payload": {
+      "gameRoundId": "round-42",
+      "result": "win"
+    }
+  }'
+```
+
+#### Callback validation error
+
+Missing required body fields return `400` with `errorCode: "VALIDATION_ERROR"`:
+
+```json
+{
+  "statusCode": 400,
+  "errorCode": "VALIDATION_ERROR",
+  "message": "brandId should not be empty",
+  "path": "/webhooks/psp/stripe",
+  "correlationId": "callback-contract-missing-brand"
+}
+```
+
+Unknown or inactive `brandId` returns `400` with `errorCode: "TENANT_NOT_FOUND"`.

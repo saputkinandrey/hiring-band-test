@@ -25,12 +25,10 @@ Implement safe PSP/GSP callback handling: raw event persistence, idempotency, te
 - Shared application service for PSP and GSP callbacks.
 - `POST /webhooks/psp/:provider` and `POST /webhooks/gsp/:provider`.
 - Persist payload in `raw_events`.
-- Idempotency via `idempotency_keys` and/or unique constraints.
+- Idempotency via unique constraint on `raw_events` (`brandId + source + provider + idempotencyKey`).
 - Finalize callback-specific Prisma fields and constraints:
-  - `raw_events.source`, `raw_events.provider`, `raw_events.externalEventId`, `raw_events.payload`, `raw_events.status`.
-  - unique constraint on `brandId + source + provider + externalEventId`.
-  - `idempotency_keys.scope`, `idempotency_keys.key`, optional relation to `raw_events`.
-  - unique constraint on `brandId + scope + key`.
+  - `raw_events.source`, `raw_events.provider`, `raw_events.idempotencyKey`, `raw_events.payload`, `raw_events.status`.
+  - unique constraint on `brandId + source + provider + idempotencyKey` (dedup).
 - Resolve and validate `brandId` from payload/headers.
 - Structured error responses and correlation id in logs.
 - OpenAPI decorators for callback DTOs, success, duplicate, and error responses.
@@ -78,7 +76,7 @@ src/modules/callbacks/
 
 ## DECISIONS.md — what to record
 
-- Idempotency strategy: key from payload (`externalEventId` + `brandId` + `provider`) or `Idempotency-Key` header.
+- Idempotency strategy: `idempotencyKey` from payload body.
 - Raw event handling: store full payload as JSON, status `pending` for future processing.
 - Why callbacks do not update balance: adapters only persist events; ledger is a separate bounded context.
 - Separation of adapter (controller) vs application service vs persistence.

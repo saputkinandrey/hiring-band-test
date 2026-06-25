@@ -14,8 +14,9 @@ model Tenant {
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
-  users    User[]
-  sessions Session[]
+  users     User[]
+  sessions  Session[]
+  rawEvents RawEvent[]
 
   @@map("tenants")
 }
@@ -54,4 +55,27 @@ model Session {
   @@index([userId])
   @@index([tokenHash])
   @@map("sessions")
+}
+
+enum CallbackSource {
+  psp
+  gsp
+}
+
+model RawEvent {
+  id             String         @id @default(cuid())
+  brandId        String
+  source         CallbackSource
+  provider       String
+  idempotencyKey String
+  payload        Json
+  status         String
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  tenant Tenant @relation(fields: [brandId], references: [brandId])
+
+  @@unique([brandId, source, provider, idempotencyKey])
+  @@index([brandId])
+  @@map("raw_events")
 }

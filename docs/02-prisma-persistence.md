@@ -71,7 +71,7 @@ No changes at this stage (no new endpoints).
   - `brandB`
 - Feature-specific model ownership:
   - Task 03 owns identity models/repositories/types (`users`, `sessions`).
-  - Task 04 owns callback models/repositories/types (`raw_events`, `idempotency_keys`).
+  - Task 04 owns callback models/repositories/types (`raw_events`).
 - Task 02 provides Prisma tooling and the shared tenant foundation, but does not create empty feature tables.
 
 ## Required tests

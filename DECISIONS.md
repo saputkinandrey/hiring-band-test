@@ -7,7 +7,7 @@ Architecture choices and trade-offs for the hiring band test backend. Updated in
 | Decision | Choice | Rationale |
 |----------|--------|-----------|
 | Framework | NestJS + TypeScript | Required by assignment; strong module boundaries and DI |
-| Database | PostgreSQL | Relational model fits users, sessions, raw_events, idempotency_keys; no NoSQL needed |
+| Database | PostgreSQL | Relational model fits users, sessions, raw_events; no NoSQL needed |
 | ORM | Prisma | Type-safe schema, migrations, and Prisma Client |
 | Local run | Docker Compose | Deterministic setup for reviewers; app + PostgreSQL in one command |
 
@@ -109,13 +109,28 @@ Task 02 adds a `tenants` table with a unique `brandId` as the stable tenant key.
 |------|------|
 | Task 02 (`db`) | `tenants` model, migration tooling, `PrismaService`, tenant seeds |
 | Task 03 (`identity`) | `users`, `sessions` models, fields, repositories, types, and migrations |
-| Task 04 (`callbacks`) | `raw_events`, `idempotency_keys` models, fields, repositories, types, and migrations |
+| Task 04 (`callbacks`) | `raw_events` model, fields, repositories, types, and migrations |
 
 This keeps persistence changes co-located with the feature that needs them.
 
-## Future Decisions (Task 04)
+## Callback Handling (Task 04)
 
-The following will be recorded as task 04 is implemented:
-- Raw event / outbox storage for callbacks
-- Idempotency strategy
-- Why callbacks do not update balance directly
+| Decision | Choice | Rationale |
+|----------|--------|-----------|
+| Ingress endpoints | `POST /webhooks/psp/:provider`, `POST /webhooks/gsp/:provider` | Thin adapters per provider family; shared service handles persistence |
+| Tenant validation | `brandId` in JSON body via `TenantRepository` | Matches identity tenant key; no tenant headers in this MVP |
+| Idempotency key source | `idempotencyKey` field in JSON body | Provider integrations already carry a stable dedup key; no `Idempotency-Key` header in Task 04 |
+| Idempotency scope | `brandId + source + provider + idempotencyKey` unique on `raw_events` | One table for capture and dedup; no separate idempotency store in Task 04 |
+| Duplicate handling | `200 OK` with `status: "duplicate"` | Safe webhook retries should not surface as client errors |
+| Raw event storage | `raw_events` row with `status: "pending"` | Persists provider payload unchanged for future async processing |
+| Balance / ledger | Not updated in Task 04 | Callback adapters only ingest and deduplicate; ledger work is a later task |
+| Async processing | Not started in Task 04 | `raw_events.status` is stored for a future worker/outbox step |
+| Logging | Correlation id, source, provider, brandId, idempotencyKey | Full callback payload is not logged by default |
+
+### Why Callbacks Do Not Update Balance Directly
+
+Webhook handlers run on unreliable, retry-heavy provider traffic. Persisting the raw message first keeps ingestion fast and idempotent while leaving balance/ledger updates to a controlled downstream step that can enforce invariants and replay safely.
+
+### Future Async Processing
+
+`raw_events` with `status: "pending"` is the handoff point for a future worker that validates business rules and posts ledger entries. Task 04 intentionally stops at durable capture plus idempotency.

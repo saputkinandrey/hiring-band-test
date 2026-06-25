@@ -154,6 +154,47 @@ Seeded tenants for local testing: `brandA`, `brandB`.
 
 See [API.md](API.md) for curl examples and structured error responses.
 
+## Callback Flow
+
+Typical local flow for Task 04 (after migrations and seed):
+
+```bash
+npm.cmd run prisma:migrate
+npm.cmd run prisma:seed
+npm.cmd run start:dev
+```
+
+Then send a PSP callback:
+
+```bash
+curl -X POST http://localhost:3000/webhooks/psp/stripe \
+  -H "Content-Type: application/json" \
+  -H "X-Correlation-Id: reviewer-psp-1" \
+  -d '{
+    "brandId": "brandA",
+    "idempotencyKey": "reviewer-psp-evt-001",
+    "payload": { "amount": 500, "currency": "USD", "status": "completed" }
+  }'
+```
+
+Repeat the same request to observe the `status: "duplicate"` response. See [API.md](API.md) for GSP examples and validation errors.
+
+Full reviewer flow from scratch:
+
+```bash
+docker compose up --build -d
+npm.cmd run prisma:migrate
+npm.cmd run prisma:seed
+npm.cmd run start:dev
+```
+
+1. `GET /health` — verify the service is up
+2. `POST /auth/register` and `POST /auth/login` — identity flow (Task 03)
+3. `POST /webhooks/psp/:provider` — accept a callback; repeat for duplicate handling
+4. `POST /webhooks/gsp/:provider` — same contract for game-service providers
+
+Swagger UI: http://localhost:3000/api
+
 ## Project Structure
 
 ```
