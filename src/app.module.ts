@@ -1,10 +1,22 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import { CallbacksModule } from './modules/callbacks/callbacks.module';
-import { DbModule } from './db/db.module';
+import { DbModule } from './common/db/db.module';
 import { HealthModule } from './modules/health/health.module';
 import { IdentityModule } from './modules/identity/identity.module';
+import { CorrelationIdMiddleware } from './common/middleware/correlation-id.middleware';
 
 @Module({
-  imports: [HealthModule, IdentityModule, CallbacksModule, DbModule],
+  imports: [
+    ConfigModule.forRoot({ isGlobal: true }),
+    HealthModule,
+    IdentityModule,
+    CallbacksModule,
+    DbModule,
+  ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer): void {
+    consumer.apply(CorrelationIdMiddleware).forRoutes('*');
+  }
+}

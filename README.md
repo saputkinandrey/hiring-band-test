@@ -95,6 +95,9 @@ cp .env.example .env
 | `POSTGRES_PORT` | PostgreSQL host port (default: 5432) |
 | `POSTGRES_HOST` | PostgreSQL host for local (non-Docker) runs (default: localhost) |
 | `DATABASE_URL` | PostgreSQL connection string for local development |
+| `SESSION_COOKIE_NAME` | HttpOnly session cookie name (default: `session`) |
+| `SESSION_TTL_SECONDS` | Session lifetime in seconds (default: `604800`, 7 days) |
+| `BCRYPT_SALT_ROUNDS` | bcrypt salt rounds for password hashing (default: `12`) |
 
 ## Database and Migrations
 
@@ -131,15 +134,36 @@ npm.cmd run prisma:generate
 
 Inside Docker Compose, the app service receives `DATABASE_URL` pointing at the `postgres` service. For local commands outside Docker, use `DATABASE_URL` with `localhost` from `.env`.
 
+## Identity Flow
+
+Typical local flow for Task 03:
+
+```bash
+npm.cmd run prisma:migrate
+npm.cmd run prisma:seed
+npm.cmd run start:dev
+```
+
+Then:
+
+1. `POST /auth/register` with `brandId`, `email`, `password`
+2. `POST /auth/login` with the same tenant credentials
+3. `GET /profile/me` using the HttpOnly `session` cookie returned by login
+
+Seeded tenants for local testing: `brandA`, `brandB`.
+
+See [API.md](API.md) for curl examples and structured error responses.
+
 ## Project Structure
 
 ```
 src/
+  common/
+    db/            # Prisma and data access (task 02)
   modules/
     health/        # Health check
     identity/      # Auth and profile (task 03)
     callbacks/     # PSP/GSP webhooks (task 04)
-  db/              # Prisma and data access (task 02)
 prisma/
   schema/          # Prisma schema and migrations (task 02)
   seed/            # Seed scripts and JSON data (task 02)

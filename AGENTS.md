@@ -45,6 +45,8 @@
 ## Implementation Discipline
 - Do not suppress errors: do not swallow exceptions, replace original failures with generic ones, or log without preserving actionable error context unless explicitly requested.
 - Mandatory SRP: every class and method must have a single clear responsibility.
+- Service layer purity: services contain business logic only. Do not pass HTTP transport objects such as `Request`, `Response`, cookies, or headers into services; keep request/response mapping in controllers, guards, middleware, or thin HTTP helpers.
+- Repository ownership: do not place queries for another aggregate or domain entity inside a foreign repository. Each repository owns persistence for its own entity only; cross-entity reads go through the owning repository or a dedicated shared repository in `common/db`.
 - Minimal delta: apply the smallest change set that fixes the stated defect; avoid "while we are here" additions.
 - Do not add meaningless code: no no-op assignments, redundant parameter passing, unused branches, or changes without real behavioral or structural benefit.
 - Before changing any shared helper, shared service method, repository method, or other reused code path, first identify all known call sites and determine whether the behavior change is intended for all of them or only for one specific scenario.

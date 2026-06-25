@@ -31,6 +31,9 @@ services:
       NODE_ENV: ${NODE_ENV:-development}
       PORT: ${PORT:-3000}
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      SESSION_COOKIE_NAME: ${SESSION_COOKIE_NAME:-session}
+      SESSION_TTL_SECONDS: ${SESSION_TTL_SECONDS:-604800}
+      BCRYPT_SALT_ROUNDS: ${BCRYPT_SALT_ROUNDS:-12}
     depends_on:
       postgres:
         condition: service_healthy

@@ -14,5 +14,44 @@ model Tenant {
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
+  users    User[]
+  sessions Session[]
+
   @@map("tenants")
+}
+
+model User {
+  id           String    @id @default(cuid())
+  brandId      String
+  email        String
+  passwordHash String
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
+
+  tenant   Tenant    @relation(fields: [brandId], references: [brandId])
+  sessions Session[]
+
+  @@unique([brandId, email])
+  @@index([brandId])
+  @@map("users")
+}
+
+model Session {
+  id        String    @id @default(cuid())
+  brandId   String
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  tenant Tenant @relation(fields: [brandId], references: [brandId])
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@index([brandId])
+  @@index([userId])
+  @@index([tokenHash])
+  @@map("sessions")
 }

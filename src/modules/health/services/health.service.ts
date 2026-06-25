@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import type { HealthResponse } from './health-response.type';
+import type { HealthResponse } from '../health-response.type';
 
 @Injectable()
 export class HealthService {
