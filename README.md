@@ -6,7 +6,7 @@ Backend service for the Backend Engineer technical assessment. Demonstrates iden
 
 - NestJS + TypeScript
 - PostgreSQL (via Docker Compose)
-- Prisma (planned in task 02)
+- Prisma
 - Docker Compose for local development
 
 ## Prerequisites
@@ -71,6 +71,11 @@ Run from the repository root:
 | `npm run format` | Format code with Prettier |
 | `npm run docker:up` | Start app + PostgreSQL via Docker Compose |
 | `npm run docker:down` | Stop Docker Compose services |
+| `npm run prisma:generate` | Generate Prisma Client |
+| `npm run prisma:migrate:new` | Create a new migration after schema changes |
+| `npm run prisma:migrate` | Apply unapplied migrations |
+| `npm run prisma:studio` | Open Prisma Studio |
+| `npm run prisma:seed` | Seed foundation tenant data (`brandA`, `brandB`) |
 
 ## Environment
 
@@ -91,7 +96,40 @@ cp .env.example .env
 | `POSTGRES_HOST` | PostgreSQL host for local (non-Docker) runs (default: localhost) |
 | `DATABASE_URL` | PostgreSQL connection string for local development |
 
-Database migrations will be documented in task 02.
+## Database and Migrations
+
+Prisma schema lives in [`prisma/schema/schema.prisma`](prisma/schema/schema.prisma); seed scripts and data are in [`prisma/seed/`](prisma/seed/). Task 02 provides the foundation (`tenants` table, migration tooling, and seeds). Feature-specific models are added in tasks 03 and 04.
+
+Typical local flow:
+
+```bash
+docker compose up --build -d
+npm.cmd run prisma:migrate
+npm.cmd run prisma:seed
+npm.cmd run prisma:generate
+```
+
+Foundation tenants (`brandA`, `brandB`) are seeded for tenant isolation. `brandId` is the stable tenant key used by later features.
+
+Create a new migration after changing the schema (used in tasks 03/04):
+
+```bash
+npm.cmd run prisma:migrate:new -- --name <migration_name>
+```
+
+Apply unapplied migrations:
+
+```bash
+npm.cmd run prisma:migrate
+```
+
+Regenerate Prisma Client after schema changes:
+
+```bash
+npm.cmd run prisma:generate
+```
+
+Inside Docker Compose, the app service receives `DATABASE_URL` pointing at the `postgres` service. For local commands outside Docker, use `DATABASE_URL` with `localhost` from `.env`.
 
 ## Project Structure
 
@@ -102,7 +140,9 @@ src/
     identity/      # Auth and profile (task 03)
     callbacks/     # PSP/GSP webhooks (task 04)
   db/              # Prisma and data access (task 02)
-prisma/            # Schema and migrations (task 02)
+prisma/
+  schema/          # Prisma schema and migrations (task 02)
+  seed/            # Seed scripts and JSON data (task 02)
 docker-compose.yml
 Dockerfile
 ```

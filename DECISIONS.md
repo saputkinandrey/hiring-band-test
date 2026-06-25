@@ -8,7 +8,7 @@ Architecture choices and trade-offs for the hiring band test backend. Updated in
 |----------|--------|-----------|
 | Framework | NestJS + TypeScript | Required by assignment; strong module boundaries and DI |
 | Database | PostgreSQL | Relational model fits users, sessions, raw_events, idempotency_keys; no NoSQL needed |
-| ORM | Prisma | Planned in task 02; type-safe schema and migrations |
+| ORM | Prisma | Type-safe schema, migrations, and Prisma Client |
 | Local run | Docker Compose | Deterministic setup for reviewers; app + PostgreSQL in one command |
 
 ## Module Boundaries
@@ -44,11 +44,36 @@ Session-based auth is planned for task 03. JWT is not required for this assessme
 
 This avoids manual PostgreSQL installation and gives reviewers a single documented startup path.
 
-## Future Decisions (Tasks 02-04)
+## Prisma and Migration Flow
+
+Prisma is the persistence layer for PostgreSQL:
+
+- Schema file: `prisma/schema/schema.prisma`
+- Seed scripts: `prisma/seed/` (data in JSON under `prisma/seed/data/`)
+- Prisma version: 6.x (classic `schema.prisma` datasource configuration)
+- Client generation: `npm run prisma:generate`
+- New migration: `npm run prisma:migrate:new -- --name <migration_name>`
+- Apply migrations: `npm run prisma:migrate`
+
+Task 02 introduces Prisma tooling, `PrismaService`, the foundation `tenants` table, and idempotent tenant seeds. It does not create empty feature-specific tables.
+
+## Foundation Tenant Model
+
+Task 02 adds a `tenants` table with a unique `brandId` as the stable tenant key. Seeds create `brandA` and `brandB` for local development and reviewer flows. The seed script is idempotent (`upsert` by `brandId`).
+
+## Feature-Specific Model Ownership
+
+| Task | Owns |
+|------|------|
+| Task 02 (`db`) | `tenants` model, migration tooling, `PrismaService`, tenant seeds |
+| Task 03 (`identity`) | `users`, `sessions` models, fields, repositories, types, and migrations |
+| Task 04 (`callbacks`) | `raw_events`, `idempotency_keys` models, fields, repositories, types, and migrations |
+
+This keeps persistence changes co-located with the feature that needs them.
+
+## Future Decisions (Tasks 03-04)
 
 The following will be recorded as those tasks are implemented:
-
-- Tenant model (`brandId` scoping)
 - Raw event / outbox storage for callbacks
 - Idempotency strategy
 - Why callbacks do not update balance directly

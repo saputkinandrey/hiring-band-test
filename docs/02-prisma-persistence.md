@@ -10,22 +10,26 @@
 
 ## Goal
 
-Set up Prisma with PostgreSQL, define the minimal data schema with tenant-scoped constraints, and prepare the persistence layer for identity and callbacks.
+Set up Prisma with PostgreSQL, add the foundational `tenants` model for tenant isolation, and prepare the tooling that later tasks will use to add their own models, repositories, types, and migrations.
 
 ## Scope
 
 **In scope:**
 
-- Prisma schema and migrations for `users`, `sessions`, `raw_events`, `idempotency_keys`.
-- `brandId` on all tenant-scoped models.
-- Unique constraints for idempotency (e.g. `brandId + provider + externalEventId` or a computed idempotency key).
+- Prisma schema foundation with PostgreSQL datasource and Prisma Client generator.
+- `tenants` table as the shared tenant foundation.
+- Idempotent seed data for baseline tenants: `brandA` and `brandB`.
+- Migration scripts for creating new migrations and applying unapplied migrations.
 - `PrismaService` / db module in NestJS.
+- Documentation of model ownership: feature-specific models are added by the tasks that implement those features.
 - Update `README.md` (env, database setup, migrations) and `DECISIONS.md`.
 
 **Out of scope:**
 
 - Auth endpoint implementation (task 03).
 - Webhook handler implementation (task 04).
+- Empty placeholder tables for `users`, `sessions`, `raw_events`, or `idempotency_keys`.
+- Feature-specific repositories, types, fields, and constraints.
 - Ledger/balance tables.
 
 ## Dependencies
@@ -37,6 +41,7 @@ Set up Prisma with PostgreSQL, define the minimal data schema with tenant-scoped
 ```
 prisma/
   schema.prisma
+  seed.ts
   migrations/
 src/
   db/
@@ -47,7 +52,9 @@ src/
 ## README.md — what to add
 
 - Environment variables: `DATABASE_URL` and related settings.
-- Migration commands: `npx prisma migrate dev`, `npx prisma generate` (or npm wrappers).
+- Migration commands for creating a new migration and applying unapplied migrations.
+- Prisma Client generation command.
+- Seed command for baseline tenants.
 - How Prisma connects to PostgreSQL in Docker Compose.
 
 ## API.md — what to add
@@ -58,27 +65,31 @@ No changes at this stage (no new endpoints).
 
 - PostgreSQL as the sole database engine (NoSQL is not used).
 - Prisma as ORM/migration tool.
-- Tenant model: `brandId` as a required field on tenant-scoped entities.
-- `raw_events` as an outbox-like table for callback payloads (no balance mutations).
-- Idempotency storage: unique constraint at DB level + application-level duplicate key handling.
-- Indexes and unique constraints for tenant-scoped queries.
+- `tenants` as the foundation model for tenant isolation.
+- Seed tenants:
+  - `brandA`
+  - `brandB`
+- Feature-specific model ownership:
+  - Task 03 owns identity models/repositories/types (`users`, `sessions`).
+  - Task 04 owns callback models/repositories/types (`raw_events`, `idempotency_keys`).
+- Task 02 provides Prisma tooling and the shared tenant foundation, but does not create empty feature tables.
 
 ## Required tests
 
 - Optional: unit/integration test for `PrismaService` connect/disconnect.
-- Main tenant and idempotency tests — in tasks 03 and 04.
+- Main tenant leakage and callback idempotency tests remain in tasks 03 and 04.
 
 ## Evaluation focus
 
-- **Multi-tenant discipline:** `brandId` in schema, indexes, and unique constraints prevent incorrect cross-tenant idempotency collisions.
-- **Reliability of callback handling:** storage constraints guarantee deduplication at DB level under concurrent duplicate callbacks.
+- **Multi-tenant discipline:** Task 02 introduces `tenants` and seed data that later tenant-scoped feature tests can use.
+- **Practicality for MVP delivery:** migration commands are clear and usable before feature work begins.
 
 ## Definition of done
 
-- [ ] Prisma schema defines `users`, `sessions`, `raw_events`, `idempotency_keys`.
-- [ ] All tenant-scoped models contain `brandId`.
-- [ ] Unique constraint for callback idempotency flow is defined.
-- [ ] Migrations apply via Docker/local flow documented in README.
+- [ ] Prisma schema foundation includes `tenants` and no empty feature-specific tables.
+- [ ] Migration creation and migration application commands are available.
+- [ ] Baseline tenant seeds (`brandA`, `brandB`) are idempotent and documented.
+- [ ] Prisma Client generation command is available.
 - [ ] `DbModule` exports `PrismaService` for other modules.
 - [ ] `README.md` updated: env, database setup, migration commands.
-- [ ] `DECISIONS.md` updated: Prisma, tenant model, raw_events, idempotency storage.
+- [ ] `DECISIONS.md` updated: Prisma, migration flow, and feature-specific model ownership.

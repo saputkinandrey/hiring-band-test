@@ -22,6 +22,10 @@ Implement the identity module: registration, login, and current user profile wit
 - `POST /auth/register` — create a user within a `brandId`.
 - `POST /auth/login` — verify credentials, create a session.
 - `GET /profile/me` — profile by session token, tenant-scoped.
+- Finalize identity-specific Prisma fields and constraints:
+  - `users.email`, `users.passwordHash`, unique constraint on `brandId + email`.
+  - `sessions.userId`, `sessions.tokenHash`, `sessions.expiresAt`, relation to `users`.
+  - indexes for tenant/session lookup.
 - Structured error responses for identity endpoints.
 - Request/correlation id in identity request flow and logs.
 - OpenAPI decorators for DTOs, success and error responses.
@@ -38,7 +42,7 @@ Implement the identity module: registration, login, and current user profile wit
 ## Dependencies
 
 - Task 01: NestJS app, Swagger, Docker.
-- Task 02: `users`, `sessions` in Prisma, `PrismaService`.
+- Task 02: Prisma tooling, migration flow, `PrismaService`, `tenants` table, and baseline tenant seeds (`brandA`, `brandB`).
 
 ## Expected project changes
 

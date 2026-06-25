@@ -26,6 +26,11 @@ Implement safe PSP/GSP callback handling: raw event persistence, idempotency, te
 - `POST /webhooks/psp/:provider` and `POST /webhooks/gsp/:provider`.
 - Persist payload in `raw_events`.
 - Idempotency via `idempotency_keys` and/or unique constraints.
+- Finalize callback-specific Prisma fields and constraints:
+  - `raw_events.source`, `raw_events.provider`, `raw_events.externalEventId`, `raw_events.payload`, `raw_events.status`.
+  - unique constraint on `brandId + source + provider + externalEventId`.
+  - `idempotency_keys.scope`, `idempotency_keys.key`, optional relation to `raw_events`.
+  - unique constraint on `brandId + scope + key`.
 - Resolve and validate `brandId` from payload/headers.
 - Structured error responses and correlation id in logs.
 - OpenAPI decorators for callback DTOs, success, duplicate, and error responses.
@@ -42,7 +47,7 @@ Implement safe PSP/GSP callback handling: raw event persistence, idempotency, te
 ## Dependencies
 
 - Task 01: NestJS app, Swagger, Docker.
-- Task 02: `raw_events`, `idempotency_keys`, Prisma.
+- Task 02: Prisma tooling, migration flow, `PrismaService`, `tenants` table, and baseline tenant seeds (`brandA`, `brandB`).
 - Task 03: correlation id middleware/filter (reuse).
 
 ## Expected project changes
